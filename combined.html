@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>서울 창업지도</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #F9F7F0; --box: #FFFFFF; --lavender: #E1C9ED;
+  --text: #1a1a1a; --muted: #555; --light: #888;
+  --accent: #9B59B6; --red: #C0392B; --green: #1E8449; --blue: #2471A3;
+  --sans: 'Noto Sans KR', sans-serif; --radius: 20px; --shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+
+/* ── 네비 ── */
+.nav { display: flex; align-items: center; gap: 8px; padding: 1.25rem 2rem; background: var(--bg); border-bottom: 1px solid rgba(0,0,0,0.06); position: sticky; top: 0; z-index: 1000; }
+.nav-title { font-size: 13px; font-weight: 700; color: var(--text); margin-right: auto; }
+.nav-btn { padding: 7px 18px; border: none; border-radius: 30px; background: transparent; color: var(--light); font-family: var(--sans); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.nav-btn.active, .nav-btn:hover { background: var(--lavender); color: var(--text); }
+
+/* ── 페이지 ── */
+.page { display: none; }
+.page.active { display: block; }
+.page-scroll { padding: 2.5rem 4rem; max-width: 1000px; margin: 0 auto; }
+
+/* ── 공통 컴포넌트 ── */
+.sec { margin-bottom: 2.5rem; }
+.badge { display: inline-block; font-size: 10px; font-weight: 700; color: #fff; letter-spacing: 0.15em; background: var(--lavender); padding: 4px 12px; border-radius: 30px; margin-bottom: 10px; }
+.sec-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; line-height: 1.3; }
+.sec-title em { color: var(--accent); font-style: normal; }
+.sec-body { font-size: 13px; color: var(--muted); line-height: 1.8; max-width: 620px; margin-bottom: 1.25rem; font-weight: 500; }
+.divider { border: none; border-top: 1px solid rgba(0,0,0,0.07); margin: 2rem 0; }
+.g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 14px; }
+.g2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 14px; }
+.g1 { margin-bottom: 14px; }
+.card { background: var(--box); border-radius: var(--radius); padding: 1.75rem 2rem; box-shadow: var(--shadow); }
+.card-lbl { font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+.card-val { font-size: 36px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; margin-bottom: 6px; }
+.card-sub { font-size: 11px; color: var(--muted); font-weight: 500; }
+.card-chart { background: var(--box); border-radius: var(--radius); padding: 1.75rem 2rem; box-shadow: var(--shadow); }
+.chart-ttl { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 1.25rem; }
+.cta { background: var(--lavender); border-radius: var(--radius); padding: 2.5rem; text-align: center; }
+.cta-lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.2em; color: var(--light); margin-bottom: 10px; }
+.cta-txt { font-size: 20px; font-weight: 700; line-height: 1.4; margin-bottom: 8px; color: var(--text); }
+.cta-sub { font-size: 12px; color: var(--muted); font-weight: 500; }
+
+/* ── PAGE 1 전용 ── */
+.formula-card { background: var(--box); border-radius: var(--radius); padding: 2rem 2.5rem; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; gap: 1.5rem; flex-wrap: wrap; }
+.formula-item { display: flex; flex-direction: column; align-items: center; }
+.formula-val-box { font-size: 14px; font-weight: 700; color: var(--text); padding: 10px 20px; background: var(--lavender); border-radius: 12px; margin-bottom: 6px; display: inline-block; text-align: center; }
+.formula-desc { font-size: 11px; color: var(--muted); font-weight: 500; text-align: center; }
+.formula-op { font-size: 28px; font-weight: 300; color: var(--light); align-self: center; margin-bottom: 20px; }
+.card-big { background: var(--box); border-radius: var(--radius); padding: 2rem 2.5rem; display: flex; align-items: center; gap: 2.5rem; box-shadow: var(--shadow); }
+.big-num { font-size: 60px; font-weight: 700; color: var(--accent); letter-spacing: -0.03em; flex-shrink: 0; }
+.big-desc { font-size: 13px; color: var(--muted); line-height: 1.8; font-weight: 500; }
+.big-desc strong { color: var(--text); font-weight: 700; }
+.find-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.find-table th { font-size: 11px; font-weight: 700; color: var(--text); padding: 8px 12px; text-align: left; border-bottom: 2px solid rgba(0,0,0,0.08); }
+.find-table td { padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.05); color: var(--text); font-weight: 500; }
+.find-table tr:last-child td { border-bottom: none; }
+
+/* ── PAGE 2 전용 ── */
+.var-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
+.var-card { background: var(--box); border-radius: 14px; padding: 1rem 1.25rem; box-shadow: var(--shadow); cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
+.var-card:hover { border-color: var(--lavender); transform: translateY(-2px); }
+.var-card.active { border-color: var(--accent); background: rgba(155,89,182,0.04); }
+.var-rank { font-size: 10px; font-weight: 700; color: var(--light); margin-bottom: 4px; }
+.var-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.var-bar-wrap { height: 4px; background: rgba(0,0,0,0.06); border-radius: 2px; margin-bottom: 6px; overflow: hidden; }
+.var-bar { height: 100%; border-radius: 2px; }
+.var-pct { font-size: 12px; font-weight: 700; color: var(--accent); }
+.var-desc { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.detail-panel { background: var(--box); border-radius: var(--radius); padding: 2rem; box-shadow: var(--shadow); margin-bottom: 14px; border-top: 3px solid var(--accent); }
+.detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.detail-title { font-size: 16px; font-weight: 700; color: var(--text); }
+.detail-tabs { display: flex; gap: 6px; }
+.dtab { padding: 5px 14px; border: none; border-radius: 20px; background: rgba(0,0,0,0.05); color: var(--muted); font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: var(--sans); }
+.dtab.active { background: var(--accent); color: #fff; }
+.detail-chart-wrap { position: relative; height: 200px; }
+.metric-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
+.metric-card { background: var(--box); border-radius: 14px; padding: 1.25rem; box-shadow: var(--shadow); text-align: center; }
+.metric-lbl { font-size: 10px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.metric-val { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; margin-bottom: 4px; }
+.metric-desc { font-size: 10px; color: var(--muted); line-height: 1.5; }
+.thr-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.thr-table th { font-size: 11px; font-weight: 700; color: var(--text); padding: 8px 12px; text-align: left; border-bottom: 2px solid rgba(0,0,0,0.08); }
+.thr-table td { padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.05); color: var(--text); font-weight: 500; }
+.thr-table tr:last-child td { border-bottom: none; }
+.thr-table tr.selected td { background: rgba(155,89,182,0.06); }
+.bdg { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+.bdg-pur { background: rgba(155,89,182,0.1); color: var(--accent); }
+.bdg-red { background: rgba(192,57,43,0.1); color: var(--red); }
+.bdg-grn { background: rgba(30,132,73,0.1); color: var(--green); }
+
+/* ── PAGE 3 지도 전용 ── */
+#p3 { display: none; }
+#map { flex: 1; }
+.map-side { width: 340px; background: var(--bg); border-left: 1px solid rgba(0,0,0,0.08); display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0; }
+.map-main { display: flex; flex: 1; overflow: hidden; }
+.side-header { padding: 16px 20px; border-bottom: 1px solid rgba(0,0,0,0.08); }
+.side-title { font-size: 10px; font-weight: 700; color: var(--light); letter-spacing: 0.15em; margin-bottom: 4px; }
+.side-addr { font-size: 13px; color: var(--text); font-weight: 600; }
+.side-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.side-body::-webkit-scrollbar { width: 4px; }
+.side-body::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 2px; }
+.map-filter { display: flex; gap: 8px; padding: 10px 20px; border-bottom: 1px solid rgba(0,0,0,0.08); flex-wrap: wrap; background: var(--bg); }
+.map-filter select { background: var(--box); border: 1px solid rgba(0,0,0,0.1); color: var(--text); font-family: var(--sans); font-size: 12px; padding: 5px 10px; border-radius: 20px; cursor: pointer; outline: none; }
+.map-stat { display: flex; gap: 16px; padding: 8px 20px; border-bottom: 1px solid rgba(0,0,0,0.08); background: var(--bg); }
+.map-stat-item { text-align: center; }
+.map-stat-n { font-size: 15px; font-weight: 700; color: var(--text); }
+.map-stat-l { font-size: 10px; color: var(--light); }
+.risk-gauge { margin-bottom: 16px; }
+.risk-lbl { font-size: 10px; font-weight: 700; color: var(--text); letter-spacing: 0.1em; margin-bottom: 6px; }
+.risk-bar-wrap { height: 8px; background: rgba(0,0,0,0.06); border-radius: 4px; margin-bottom: 6px; overflow: hidden; }
+.risk-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+.risk-pct { font-size: 24px; font-weight: 700; }
+.risk-grade { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 20px; margin-left: 8px; font-weight: 700; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.06); margin-bottom: 16px; border-radius: 12px; overflow: hidden; }
+.info-cell { background: var(--box); padding: 10px 12px; }
+.info-cell-lbl { font-size: 10px; font-weight: 700; color: var(--light); margin-bottom: 3px; }
+.info-cell-val { font-size: 13px; color: var(--text); font-weight: 600; }
+.tl-section { margin-bottom: 16px; }
+.tl-title { font-size: 10px; font-weight: 700; color: var(--light); letter-spacing: 0.1em; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.tl-item { display: flex; gap: 8px; margin-bottom: 6px; align-items: flex-start; }
+.tl-period { font-size: 10px; color: var(--light); min-width: 50px; padding-top: 2px; font-weight: 600; }
+.tl-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lavender); margin-top: 5px; flex-shrink: 0; }
+.tl-dot.active { background: var(--accent); }
+.tl-업종 { font-size: 12px; color: var(--text); font-weight: 500; }
+.tl-공실 { color: var(--light); font-style: italic; }
+.rec-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.rec-item:last-child { border-bottom: none; }
+.rec-name { font-size: 12px; color: var(--text); font-weight: 500; }
+.rec-survive { font-size: 11px; color: var(--green); font-weight: 700; }
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 12px; color: var(--light); }
+.empty-icon { font-size: 32px; opacity: 0.4; }
+.empty-text { font-size: 13px; text-align: center; line-height: 1.6; }
+.map-legend { position: absolute; bottom: 24px; left: 24px; z-index: 1000; background: var(--box); border: 1px solid rgba(0,0,0,0.08); padding: 12px 16px; border-radius: 14px; box-shadow: var(--shadow); }
+.legend-title { font-size: 10px; font-weight: 700; color: var(--light); letter-spacing: 0.1em; margin-bottom: 8px; }
+.legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 11px; color: var(--muted); font-weight: 500; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.leaflet-tile { filter: saturate(0.3) brightness(1.05); }
+.leaflet-container { background: #f0ece4; }
+.leaflet-control-zoom a { background: var(--box) !important; color: var(--text) !important; border-color: rgba(0,0,0,0.1) !important; }
+.sangkwon-tooltip { background: rgba(255,255,255,0.95); border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; font-family: 'Noto Sans KR', sans-serif; font-size: 12px; font-weight: 600; color: #1a1a1a; padding: 4px 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-title">서울 창업지도</div>
+  <button class="nav-btn active" onclick="showPage('p1',this)">01 문제제기</button>
+  <button class="nav-btn" onclick="showPage('p2',this)">02 원인탐색</button>
+  <button class="nav-btn" onclick="showPage('p3',this)">03 창업지도</button>
+</nav>
+
+<!-- ════════ PAGE 1 ════════ -->
+<div class="page active" id="p1">
+<div class="page-scroll">
+
+  <div class="sec">
+    <div class="badge">01 · CONTEXT</div>
+    <div class="sec-title">위치적 특성으로 <em>폐업을 예측</em>할 수 있다</div>
+    <div class="sec-body">서울시 10년치 상가 데이터를 위치 단위로 분석해 교체율이 높은 자리를 사전에 식별한다.</div>
+    <div class="g3">
+      <div class="card"><div class="card-lbl">상권 위치 수</div><div class="card-val">330,245</div><div class="card-sub">서울시 전체 상가 자리</div></div>
+      <div class="card"><div class="card-lbl">데이터 기간</div><div class="card-val">10년</div><div class="card-sub">2015 Q4 — 2025 Q1 · 40분기</div></div>
+      <div class="card"><div class="card-lbl">상권 범위 수</div><div class="card-val">1,589</div><div class="card-sub">서울시 등록 상권</div></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="badge">02 · PROBLEM</div>
+    <div class="sec-title">소상공인 <em>10곳 중 3곳</em>은 2년을 못 버틴다</div>
+    <div class="sec-body">창업 후 2년 내 폐업률 약 38%. 단순히 운이 나빠서가 아니라, 자리 자체의 구조적 문제일 수 있다.</div>
+    <div class="g2">
+      <div class="card"><div class="card-lbl">2년대 폐업률</div><div class="card-val" style="color:var(--red);">38%</div><div class="card-sub">소상공인 생존율 통계 기준</div></div>
+      <div class="card"><div class="card-lbl">위치당 평균 교체 횟수</div><div class="card-val" style="color:var(--red);">1.75회</div><div class="card-sub">10년 · 40분기 기준</div></div>
+    </div>
+    <div class="card-chart">
+      <div class="chart-ttl">상권별 교체횟수 분포</div>
+      <div style="position:relative;height:220px;"><canvas id="replaceChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="badge">03 · HYPOTHESIS</div>
+    <div class="sec-title">상권 평균은 <em>개별 위치를 설명하지 못한다</em></div>
+    <div class="sec-body">기존 창업 분석은 상권 단위. 하지만 같은 상권 안에서도 살아남는 자리와 망하는 자리가 나뉜다.</div>
+    <div class="g1">
+      <div style="background:#EAF4EC; border-radius:var(--radius); padding:1.25rem 1.75rem; margin-bottom:14px;">
+        <div style="font-size:13px; font-weight:700; color:#1E5C30; margin-bottom:6px;">H₀ : 같은 상권 내 위치들의 평균 점포 생존기간은 차이가 없다.</div>
+        <div style="font-size:13px; font-weight:700; color:#1E5C30;">H₁ : 같은 상권 내에서도 위치에 따라 평균 점포 생존기간에 유의미한 차이가 있다.</div>
+      </div>
+      <div class="card-big">
+        <div class="big-num">184.6%</div>
+        <div class="big-desc">
+          <strong>변동계수(CV) — 상권 내 위치별 교체율 편차</strong><br>
+          변동계수(CV) = 표준편차 ÷ 평균 × 100. 값이 클수록 같은 상권 안에서도 위치별 편차가 크다는 뜻.<br><br>
+          즉, 같은 상권 안에서 교체율이 얼마나 들쭉날쭉한지를 나타내는 지표.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="badge">04 · PROOF</div>
+    <div class="sec-title">통계적으로 <em>유의미하게 다르다</em></div>
+    <div class="sec-body">ANOVA 검정으로 상권 내 위치별 교체율 차이가 우연이 아님을 확인.</div>
+    <div class="g2" style="margin-bottom:14px;">
+      <div class="card"><div class="card-lbl">ANOVA p-value</div><div class="card-val" style="color:var(--green);">p ≈ 0</div><div class="card-sub">귀무가설 기각 · 차이는 유의미</div></div>
+      <div class="card"><div class="card-lbl">전체 상권 검증</div><div class="card-val" style="color:var(--green);">1,589개</div><div class="card-sub">전 상권에서 동일한 패턴 확인</div></div>
+    </div>
+    <div class="card-chart">
+      <div class="chart-ttl">상권별 변동계수(CV) 분포 — 1,589개 상권</div>
+      <div style="position:relative;height:200px;"><canvas id="cvChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="badge">05 · KEY FINDING</div>
+    <div class="sec-title">상권 유형은 <em>위험의 원인이 아니다</em></div>
+    <div class="sec-body">교체율이 높은 상권일수록 오히려 내부 편차가 낮다. 위험한 자리와 안전한 자리는 같은 상권 안에 섞여 있다.</div>
+    <div class="card">
+      <table class="find-table">
+        <thead><tr><th>상권유형</th><th>평균 교체횟수</th><th>변동계수(CV)</th><th>해석</th></tr></thead>
+        <tbody>
+          <tr><td>전통시장</td><td><span class="bdg bdg-red">2.87회</span></td><td>158.5%</td><td style="color:var(--muted);">교체 많지만 편차 낮음</td></tr>
+          <tr><td>발달상권</td><td><span class="bdg bdg-red">2.35회</span></td><td>158.0%</td><td style="color:var(--muted);">교체 많지만 편차 낮음</td></tr>
+          <tr><td>관광특구</td><td>2.46회</td><td>156.1%</td><td style="color:var(--muted);">—</td></tr>
+          <tr><td>골목상권</td><td><span class="bdg bdg-grn">1.41회</span></td><td><span class="bdg bdg-pur">196.9%</span></td><td style="color:var(--muted);">교체 적지만 편차 가장 큼</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="badge">06 · WHY IT MATTERS</div>
+    <div class="cta">
+      <div class="cta-lbl">CONCLUSION</div>
+      <div class="cta-txt">위치 단위 분석으로<br>2년을 못 버티는 자리를 사전에 식별할 수 있다</div>
+      <div class="cta-sub">상권이 아닌 위치의 물리적 특성이 교체율을 결정한다 → 다음: 원인 탐색</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ════════ PAGE 2 ════════ -->
+<div class="page" id="p2">
+<div class="page-scroll">
+
+  <div class="sec">
+    <div class="badge">10 · OBJECTIVE</div>
+    <div class="sec-title">위험 장소를 <em>사전에 특정</em>하는 것이 목표</div>
+    <div class="sec-body">상권 평균과 개별 위치의 교체율이 다르다는 것을 증명했다. 이제 어떤 위치적 특성이 위험을 만드는지 원인을 찾는다.</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="badge">11 · METRIC</div>
+    <div class="sec-title">상권대비 교체율로 <em>위치의 위험도</em>를 측정한다</div>
+    <div class="sec-body">같은 상권 안에서 이 위치가 얼마나 더 많이 바뀌었는가. 양수일수록 위험, 음수일수록 안전.</div>
+    <div class="g1">
+      <div class="formula-card">
+        <div class="formula-item">
+          <div class="formula-val-box">상권대비 교체율</div>
+          <div class="formula-desc">위치의 위험도 지표</div>
+        </div>
+        <div class="formula-op">=</div>
+        <div class="formula-item">
+          <div class="formula-val-box">개인 교체율</div>
+          <div class="formula-desc">해당 위치의 교체횟수</div>
+        </div>
+        <div class="formula-op">−</div>
+        <div class="formula-item">
+          <div class="formula-val-box">상권 평균 교체율</div>
+          <div class="formula-desc">같은 상권의 평균 교체횟수</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-chart" style="margin-top:14px;">
+      <div class="chart-ttl">상권대비 교체율 분포 — 전체 329,951 위치</div>
+      <div style="position:relative;height:200px;"><canvas id="relChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="badge">12 · THRESHOLD</div>
+    <div class="sec-title">상위 10% = <em>2년을 못 버티는 자리</em></div>
+    <div class="sec-body">상권대비 교체율 상위 10% 장소는 교체횟수 5회 이상. 40분기 중 5번 바뀜 = 평균 2년 이하 생존.</div>
+    <div class="g3">
+      <div class="card"><div class="card-lbl">위험 기준</div><div class="card-val" style="color:var(--red);">상위 10%</div><div class="card-sub">상권대비 교체율 분포 기준</div></div>
+      <div class="card"><div class="card-lbl">위험 장소 교체횟수</div><div class="card-val" style="color:var(--red);">5회 이상</div><div class="card-sub">40분기 중 5번 이상 업종 교체</div></div>
+      <div class="card"><div class="card-lbl">위험 장소 수</div><div class="card-val" style="color:var(--red);">33,007</div><div class="card-sub">전체 330,245개 중 10%</div></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="badge">13 · VARIABLES</div>
+    <div class="sec-title">위치의 <em>물리적 특성</em>으로 위험을 설명한다</div>
+    <div class="sec-body">건축물대장·지하철역 좌표·가로등 위치 데이터를 결합. 변수를 클릭하면 상세 분포를 확인할 수 있습니다.</div>
+    <div class="var-grid" id="varGrid">
+      <div class="var-card active" onclick="showDetail('floor',this)"><div class="var-rank">#1</div><div class="var-name">층구분</div><div class="var-bar-wrap"><div class="var-bar" style="width:100%;background:var(--accent);"></div></div><div class="var-pct">31.3%</div><div class="var-desc">1층 / 2층이상 / 지하</div></div>
+      <div class="var-card" onclick="showDetail('area',this)"><div class="var-rank">#2</div><div class="var-name">연면적</div><div class="var-bar-wrap"><div class="var-bar" style="width:71%;background:var(--accent);"></div></div><div class="var-pct">22.3%</div><div class="var-desc">건축물대장 기준</div></div>
+      <div class="var-card" onclick="showDetail('count',this)"><div class="var-rank">#3</div><div class="var-name">건물내위치수</div><div class="var-bar-wrap"><div class="var-bar" style="width:44%;background:var(--accent);"></div></div><div class="var-pct">13.8%</div><div class="var-desc">같은 건물 내 상가 수</div></div>
+      <div class="var-card" onclick="showDetail('floors',this)"><div class="var-rank">#4</div><div class="var-name">건물지상층수</div><div class="var-bar-wrap"><div class="var-bar" style="width:30%;background:var(--blue);"></div></div><div class="var-pct">9.3%</div><div class="var-desc">건축물대장 기준</div></div>
+      <div class="var-card" onclick="showDetail('usage',this)"><div class="var-rank">#5</div><div class="var-name">주용도</div><div class="var-bar-wrap"><div class="var-bar" style="width:24%;background:var(--blue);"></div></div><div class="var-pct">7.4%</div><div class="var-desc">판매시설 위험↑</div></div>
+      <div class="var-card" onclick="showDetail('nearby',this)"><div class="var-rank">#6</div><div class="var-name">주변상가수</div><div class="var-bar-wrap"><div class="var-bar" style="width:15%;background:var(--light);"></div></div><div class="var-pct">4.7%</div><div class="var-desc">반경 200m 기준</div></div>
+      <div class="var-card" onclick="showDetail('subway',this)"><div class="var-rank">#7</div><div class="var-name">지하철거리</div><div class="var-bar-wrap"><div class="var-bar" style="width:12%;background:var(--light);"></div></div><div class="var-pct">3.8%</div><div class="var-desc">가까울수록 위험↑</div></div>
+      <div class="var-card" onclick="showDetail('sangkwon',this)"><div class="var-rank">#8</div><div class="var-name">상권유형</div><div class="var-bar-wrap"><div class="var-bar" style="width:7%;background:rgba(0,0,0,0.15);"></div></div><div class="var-pct" style="color:var(--light);">2.3%</div><div class="var-desc">골목/발달/전통/관광</div></div>
+    </div>
+
+    <div class="detail-panel" id="detailPanel">
+      <div class="detail-header">
+        <div class="detail-title" id="detailTitle">층구분 — 상세 분포</div>
+        <div class="detail-tabs">
+          <button class="dtab active" onclick="switchTab('ratio',this)">위험비율</button>
+          <button class="dtab" onclick="switchTab('dist',this)">전체 vs 위험</button>
+        </div>
+      </div>
+      <div class="detail-chart-wrap"><canvas id="detailChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="badge">14 · MODEL</div>
+    <div class="sec-title">CatBoost로 <em>위험 장소를 분류</em>한다</div>
+    <div class="sec-body">범주형 변수를 그대로 처리하는 CatBoost 사용. 입지 평가 목적상 Recall 우선.</div>
+    <div class="metric-grid">
+      <div class="metric-card"><div class="metric-lbl">ROC-AUC</div><div class="metric-val" style="color:var(--green);">0.797</div><div class="metric-desc">랜덤 0.5 대비<br>실용 기준 0.7 통과</div></div>
+      <div class="metric-card"><div class="metric-lbl">Recall</div><div class="metric-val" style="color:var(--green);">82.8%</div><div class="metric-desc">실제 위험 자리 중<br>잡아낸 비율</div></div>
+      <div class="metric-card"><div class="metric-lbl">NPV</div><div class="metric-val" style="color:var(--green);">96.1%</div><div class="metric-desc">안전이라 한 자리 중<br>실제 안전 비율</div></div>
+      <div class="metric-card"><div class="metric-lbl">PR-AUC</div><div class="metric-val" style="color:var(--blue);">0.355</div><div class="metric-desc">랜덤 0.10 대비<br>3.5배</div></div>
+    </div>
+    <div class="card">
+      <div class="card-lbl" style="margin-bottom:14px;">임계값 선택 — 입지 평가 목적상 Recall 중시 (임계값 0.40 선택)</div>
+      <table class="thr-table">
+        <thead><tr><th>목적</th><th>임계값</th><th>Precision</th><th>Recall</th><th>F1</th><th>위험 예측 수</th></tr></thead>
+        <tbody>
+          <tr><td>F1 최고</td><td>0.65</td><td>30.4%</td><td>51.9%</td><td><span class="bdg bdg-pur">0.383</span></td><td>11,279</td></tr>
+          <tr><td>균형</td><td>0.60</td><td>26.7%</td><td>61.3%</td><td>0.372</td><td>15,144</td></tr>
+          <tr class="selected"><td><strong>Recall 중시 ✅</strong></td><td><strong>0.40</strong></td><td>18.1%</td><td><span class="bdg bdg-grn">82.8%</span></td><td>0.297</td><td>30,171</td></tr>
+          <tr><td>Precision 중시</td><td>0.75</td><td>41.0%</td><td>32.1%</td><td>0.360</td><td>5,176</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="badge">15 · IMPORTANCE</div>
+    <div class="sec-title">층구분·건물규모가 <em>위험을 결정</em>한다</div>
+    <div class="sec-body">상권유형(2.3%)과 도로유형(1.1%)은 거의 영향 없음. 건물의 물리적 특성이 핵심이다.</div>
+    <div class="card-chart">
+      <div class="chart-ttl">Feature Importance — CatBoost (전체 329,951 위치)</div>
+      <div style="position:relative;height:260px;"><canvas id="fiChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="sec">
+    <div class="badge">16 · CONCLUSION</div>
+    <div class="cta">
+      <div class="cta-lbl">KEY FINDING</div>
+      <div class="cta-txt">대형 상업건물 1층 판매시설이<br>가장 위험한 자리다</div>
+      <div class="cta-sub">상권유형은 위험의 원인이 아니다 · 건물의 물리적 특성이 교체율을 결정한다 → 다음: 창업지도</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ════════ PAGE 3 지도 ════════ -->
+<div id="p3">
+  <div class="map-filter">
+    <select id="filter-se" onchange="filterBySE()">
+      <option value="">전체 상권유형</option>
+      <option value="골목상권">골목상권</option>
+      <option value="발달상권">발달상권</option>
+      <option value="전통시장">전통시장</option>
+      <option value="관광특구">관광특구</option>
+    </select>
+    <select id="filter-grade" onchange="filterMarkers()">
+      <option value="">전체 위험등급</option>
+      <option value="매우위험">매우위험</option>
+      <option value="위험">위험</option>
+      <option value="보통">보통</option>
+      <option value="안전">안전</option>
+      <option value="매우안전">매우안전</option>
+    </select>
+    <select id="filter-floor" onchange="filterMarkers()">
+      <option value="">전체 층구분</option>
+      <option value="1층">1층</option>
+      <option value="2층이상">2층이상</option>
+      <option value="지하">지하</option>
+    </select>
+    <span id="map-hint" style="font-size:12px;color:var(--light);margin-left:8px;align-self:center;">상권을 클릭하면 위치가 표시됩니다</span>
+  </div>
+  <div class="map-stat">
+    <div class="map-stat-item"><div class="map-stat-n" id="total-count">-</div><div class="map-stat-l">선택 상권 위치</div></div>
+    <div class="map-stat-item"><div class="map-stat-n" style="color:var(--red)" id="danger-count">-</div><div class="map-stat-l">위험위치</div></div>
+    <div class="map-stat-item"><div class="map-stat-n" style="color:var(--green)" id="safe-count">-</div><div class="map-stat-l">안전위치</div></div>
+    <div class="map-stat-item" style="margin-left:auto;"><span id="selected-sangkwon" style="font-size:12px;font-weight:700;color:var(--accent);">선택된 상권 없음</span></div>
+  </div>
+  <div class="map-main" style="flex:1; display:flex; overflow:hidden; min-height:0;">
+    <div id="map" style="position:relative; flex:1; min-height:400px;">
+      <div class="map-legend">
+        <div class="legend-title">위험등급</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#C0392B;"></div> 매우위험</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#E67E22;"></div> 위험</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#F39C12;"></div> 보통</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#27AE60;"></div> 안전</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2980B9;"></div> 매우안전</div>
+      </div>
+    </div>
+    <aside class="map-side">
+      <!-- 즐겨찾기 탭 -->
+      <div style="display:flex;border-bottom:1px solid rgba(0,0,0,0.08);">
+        <button class="side-tab active" onclick="switchSideTab('detail',this)" style="flex:1;padding:10px;border:none;background:transparent;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;color:var(--text);border-bottom:2px solid var(--accent);">상세정보</button>
+        <button class="side-tab" onclick="switchSideTab('bookmark',this)" style="flex:1;padding:10px;border:none;background:transparent;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;color:var(--light);border-bottom:2px solid transparent;">즐겨찾기 ⭐</button>
+        <button class="side-tab" onclick="switchSideTab('compare',this)" style="flex:1;padding:10px;border:none;background:transparent;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;color:var(--light);border-bottom:2px solid transparent;">비교 📊</button>
+      </div>
+
+      <!-- 상세정보 패널 -->
+      <div id="side-detail">
+        <div class="side-header">
+          <div class="side-title">LOCATION DETAIL</div>
+          <div class="side-addr" id="side-addr">위치를 클릭하세요</div>
+        </div>
+        <div class="side-body" id="side-body">
+          <div class="empty-state">
+            <div class="empty-icon">📍</div>
+            <div class="empty-text">상권을 먼저 선택하고<br>위치를 클릭하세요</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 즐겨찾기 패널 -->
+      <div id="side-bookmark" style="display:none;flex:1;overflow-y:auto;padding:16px 20px;">
+        <div style="font-size:11px;font-weight:700;color:var(--light);letter-spacing:0.1em;margin-bottom:12px;">즐겨찾기한 위치</div>
+        <div id="bookmark-list">
+          <div class="empty-state" style="height:200px;">
+            <div class="empty-icon">⭐</div>
+            <div class="empty-text">상세정보에서 ⭐를 눌러<br>즐겨찾기에 추가하세요</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 비교 패널 -->
+      <div id="side-compare" style="display:none;flex:1;overflow-y:auto;padding:16px 20px;">
+        <div style="font-size:11px;font-weight:700;color:var(--light);letter-spacing:0.1em;margin-bottom:12px;">위치 비교 (최대 2개)</div>
+        <div id="compare-list">
+          <div class="empty-state" style="height:200px;">
+            <div class="empty-icon">📊</div>
+            <div class="empty-text">상세정보에서 📊를 눌러<br>비교 목록에 추가하세요</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+// ════════ 공통 ════════
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  // p3는 별도 처리
+  document.getElementById('p3').style.display = 'none';
+  if(id !== 'p3') {
+    document.getElementById(id).classList.add('active');
+  } else {
+    document.getElementById('p3').style.display = 'flex';
+    document.getElementById('p3').style.flexDirection = 'column';
+    document.getElementById('p3').style.height = 'calc(100vh - 57px)';
+    if(!window._mapInit) { window._mapInit=true; initMap(); }
+    else { setTimeout(()=>mapInstance&&mapInstance.invalidateSize(),100); }
+  }
+  btn.classList.add('active');
+}
+
+// ════════ PAGE 1 차트 ════════
+new Chart('replaceChart', {
+  type: 'bar',
+  data: {
+    labels: Array.from({length:41},(_,i)=>i),
+    datasets: [{ data: [0,52000,40000,42000,63000,65000,70000,63000,61000,42000,38000,33000,32000,30000,26000,25000,22000,21000,20000,19000,18000,17000,17000,16000,15000,15000,14000,13000,21000,13000,13000,12000,20000,35000,8000,7000,7000,7000,7000,9000,140000],
+      backgroundColor:'rgba(155,89,182,0.45)', borderColor:'rgba(155,89,182,0.7)', borderWidth:1, borderRadius:2 }]
+  },
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+    scales:{ x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#aaa',font:{size:10}},title:{display:true,text:'교체횟수 (분기)',color:'#888',font:{size:11}}},
+             y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#aaa',font:{size:10},callback:v=>v>=10000?(v/10000)+'만':v},title:{display:true,text:'상가 수',color:'#888',font:{size:11}}}}}
+});
+
+new Chart('cvChart', {
+  type:'bar',
+  data:{ labels:['54~75','75~96','96~117','117~138','138~159','159~180','180~201','201~222','222~243','243~264','264~285','285~306','306~327','327+'],
+    datasets:[{data:[8,17,42,73,110,148,178,192,210,185,160,120,88,258],backgroundColor:'rgba(192,57,43,0.45)',borderRadius:2}] },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#aaa',font:{size:10}}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#aaa',font:{size:10}}}}}
+});
+
+// ════════ PAGE 2 ════════
+const VAR_DATA = {
+  floor:    { title:'층구분', labels:['1층','2층이상','지하','층정보없음'], ratio:[16.31,5.88,1.31,9.46], total:[30.71,34.36,4.01,30.92], danger:[50.04,20.20,0.52,29.23] },
+  area:     { title:'연면적', labels:['~200㎡','200~500','500~1000','1000~3000','3000+'], ratio:[4.76,6.91,9.54,12.76,21.84], total:[28,32,18,13,9], danger:[10,17,13,23,37] },
+  count:    { title:'건물내위치수', labels:['1개','2개','3개','4~5개','6~10개','11개+'], ratio:[4.4,7.2,9.8,12.1,16.3,23.5], total:[25,22,18,16,12,7], danger:[8,12,13,15,23,29] },
+  floors:   { title:'건물지상층수', labels:['1~2층','3~5층','6~10층','11~20층','21층+'], ratio:[6.9,8.4,11.2,18.7,27.2], total:[30,28,22,13,7], danger:[15,18,18,25,24] },
+  usage:    { title:'주용도', labels:['판매시설','공장','업무시설','근린생활','문화집회','위락시설','교육연구'], ratio:[37.17,20.06,17.07,16.41,12.57,12.38,11.47], total:[1,1.2,9,0.5,0.2,0.2,1.1], danger:[2.7,1.8,11.5,0.6,0.2,0.2,0.9] },
+  nearby:   { title:'주변상가수', labels:['~50개','50~100','100~200','200~400','400+'], ratio:[8.7,9.1,9.8,10.2,10.4], total:[18,22,28,22,10], danger:[12,15,20,17,36] },
+  subway:   { title:'지하철거리', labels:['~200m','200~500m','500m~1km','1~2km','2km+'], ratio:[11.5,10.8,9.9,8.6,7.8], total:[12,28,35,18,7], danger:[10,22,26,10,4] },
+  sangkwon: { title:'상권유형', labels:['발달상권','관광특구','전통시장','골목상권'], ratio:[15.3,13.8,12.8,9.2], total:[41.1,3,9.4,46.5], danger:[47,3,9,41] }
+};
+let currentVar='floor', currentTab='ratio', detailChart=null;
+
+function showDetail(key, el) {
+  currentVar=key;
+  document.querySelectorAll('.var-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('detailTitle').textContent = VAR_DATA[key].title + ' — 상세 분포';
+  renderDetail(key, currentTab);
+}
+function switchTab(tab, btn) {
+  currentTab=tab;
+  document.querySelectorAll('.dtab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderDetail(currentVar, tab);
+}
+function renderDetail(key, tab) {
+  const d=VAR_DATA[key];
+  if(detailChart) detailChart.destroy();
+  const datasets = tab==='ratio'
+    ? [{label:'위험비율(%)',data:d.ratio,backgroundColor:'rgba(155,89,182,0.55)',borderColor:'rgba(155,89,182,0.8)',borderWidth:1,borderRadius:6}]
+    : [{label:'전체 분포',data:d.total,backgroundColor:'rgba(136,136,136,0.35)',borderRadius:4},
+       {label:'위험 분포',data:d.danger,backgroundColor:'rgba(192,57,43,0.55)',borderRadius:4}];
+  detailChart = new Chart('detailChart', {
+    type:'bar', data:{labels:d.labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:tab==='dist',position:'top',labels:{color:'#555',font:{size:11,family:"'Noto Sans KR'"},boxWidth:12,boxHeight:12}}},
+      scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#555',font:{size:11,family:"'Noto Sans KR'"}}},
+              y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#aaa',font:{size:11},callback:v=>v+'%'}}}}
+  });
+}
+
+new Chart('relChart', {
+  type:'bar',
+  data:{labels:['-8','-7','-6','-5','-4','-3','-2','-1','0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20+'],
+    datasets:[{data:[12,248,203,1583,3182,37403,141857,48439,23235,14020,12453,9735,9599,7685,6589,4621,3432,2061,1164,740,462,340,248,198,136,89,75,33,107],
+      backgroundColor:(ctx)=>ctx.dataIndex>=13?'rgba(192,57,43,0.65)':'rgba(155,89,182,0.45)',borderRadius:2}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#888',font:{size:10}},title:{display:true,text:'상권대비 교체율',color:'#888',font:{size:11}}},
+            y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#aaa',font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(0)+'만':v},title:{display:true,text:'위치 수',color:'#888',font:{size:11}}}}}
+});
+
+new Chart('fiChart', {
+  type:'bar',
+  data:{labels:['층구분','연면적','건물내위치수','건물지상층수','주용도','주변상가수','지하철거리','상권유형','도로유형'],
+    datasets:[{data:[31.3,22.3,13.8,9.3,7.4,4.7,3.8,2.3,1.1],
+      backgroundColor:['rgba(155,89,182,0.7)','rgba(155,89,182,0.7)','rgba(155,89,182,0.7)','rgba(36,113,163,0.6)','rgba(36,113,163,0.6)','rgba(136,136,136,0.45)','rgba(136,136,136,0.45)','rgba(136,136,136,0.25)','rgba(136,136,136,0.25)'],
+      borderRadius:6}]},
+  options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#aaa',font:{size:11},callback:v=>v+'%'},max:35},
+            y:{grid:{display:false},ticks:{color:'#333',font:{size:12,weight:'600',family:"'Noto Sans KR'"}}}}}
+});
+
+renderDetail('floor','ratio');
+
+// ════════ PAGE 3 지도 ════════
+const GRADE_COLOR = {'매우위험':'#C0392B','위험':'#E67E22','보통':'#F39C12','안전':'#27AE60','매우안전':'#2980B9'};
+const GRADE_BG    = {'매우위험':'rgba(192,57,43,0.1)','위험':'rgba(230,126,34,0.1)','보통':'rgba(243,156,18,0.1)','안전':'rgba(39,174,96,0.1)','매우안전':'rgba(41,128,185,0.1)'};
+const SE_COLOR    = {'골목상권':'#9B59B6','발달상권':'#E67E22','전통시장':'#27AE60','관광특구':'#2980B9'};
+
+let mapInstance=null, markerLayer=null, sangkwonLayer=null;
+let allData=[], popupData={}, recommendData={}, sangkwonGeoData=null;
+let selectedTrdarCd=null, bookmarks=[], compareList=[];
+
+function initMap() {
+  mapInstance = L.map('map', {center:[37.5665,126.9780], zoom:12});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {attribution:'© OpenStreetMap', maxZoom:19}).addTo(mapInstance);
+  markerLayer = L.layerGroup().addTo(mapInstance);
+  loadMapData();
+  setTimeout(()=>mapInstance.invalidateSize(), 200);
+}
+
+function loadMapData() {
+  // 상권 폴리곤 — 독립 로드
+  fetch('./sangkwon.geojson')
+    .then(r=>r.json())
+    .then(geoData=>{
+      sangkwonGeoData=geoData;
+      renderSangkwonLayer(geoData);
+      document.getElementById('map-hint').textContent='상권을 클릭하면 위치가 표시됩니다';
+    }).catch(e=>console.log('sangkwon.geojson 로드 실패:', e));
+
+  // 위치 데이터 — 독립 로드
+  fetch('./step5_map_data.json')
+    .then(r=>r.text())
+    .then(t=>{
+      allData=JSON.parse(t.replace(/:\s*NaN/g,': null'));
+
+    }).catch(()=>console.log('step5_map_data.json 없음 — 전처리 먼저 실행'));
+
+  fetch('./step5_popup_data.json').then(r=>r.json()).then(d=>{popupData=d;}).catch(()=>{});
+  fetch('./step5_recommend.json').then(r=>r.json()).then(d=>{recommendData=d;}).catch(()=>{});
+}
+
+function renderSangkwonLayer(geoData) {
+  if(sangkwonLayer) { sangkwonLayer.remove(); sangkwonLayer=null; }
+  const seFilter=document.getElementById('filter-se').value;
+
+  sangkwonLayer = L.geoJSON(geoData, {
+    filter: f=> !seFilter || f.properties.TRDAR_SE_1===seFilter,
+    style: f=>({
+      fillColor: SE_COLOR[f.properties.TRDAR_SE_1]||'#aaa',
+      fillOpacity: 0.15,
+      color: SE_COLOR[f.properties.TRDAR_SE_1]||'#aaa',
+      weight: 1.5,
+      opacity: 0.7
+    }),
+    onEachFeature: (f, layer)=>{
+      layer.on({
+        mouseover: e=>e.target.setStyle({fillOpacity:0.35,weight:2.5}),
+        mouseout:  e=>sangkwonLayer.resetStyle(e.target),
+        click:     ()=>selectSangkwon(f.properties, layer)
+      });
+      layer.bindTooltip(f.properties.TRDAR_CD_N,
+        {sticky:true, className:'sangkwon-tooltip'});
+    }
+  }).addTo(mapInstance);
+}
+
+function selectSangkwon(props, layer) {
+  if(sangkwonLayer) sangkwonLayer.eachLayer(l=>sangkwonLayer.resetStyle(l));
+  layer.setStyle({fillOpacity:0.45, weight:3, color:SE_COLOR[props.TRDAR_SE_1]||'#9B59B6'});
+  selectedTrdarCd=Number(props.TRDAR_CD);
+  document.getElementById('selected-sangkwon').textContent=props.TRDAR_CD_N;
+  document.getElementById('map-hint').textContent='위치를 클릭하면 상세정보가 표시됩니다';
+  renderMarkers();
+}
+
+function renderMarkers() {
+  markerLayer.clearLayers();
+  if(!selectedTrdarCd && bookmarks.length===0) return;
+
+  const bookmarkIds=new Set(bookmarks.map(b=>b.위치ID));
+  const gradeFilter=document.getElementById('filter-grade').value;
+  const floorFilter=document.getElementById('filter-floor').value;
+
+  let data=allData.filter(d=>d.TRDAR_CD===selectedTrdarCd || bookmarkIds.has(d.위치ID));
+  if(gradeFilter) data=data.filter(d=>d.위험등급===gradeFilter);
+  if(floorFilter) data=data.filter(d=>d.층구분===floorFilter);
+
+  data.forEach(d=>{
+    const isBookmark=bookmarkIds.has(d.위치ID);
+    const r=d.위험등급==='매우위험'?6:d.위험등급==='위험'?5:4;
+    const m=L.circleMarker([d.위도,d.경도],{
+      radius: isBookmark?8:r,
+      color: isBookmark?'#FFD700':GRADE_COLOR[d.위험등급],
+      fillColor: GRADE_COLOR[d.위험등급],
+      fillOpacity: 0.8,
+      weight: isBookmark?3:0
+    });
+    m.on('click',()=>showLocationDetail(d));
+    markerLayer.addLayer(m);
+  });
+
+  document.getElementById('total-count').textContent=data.length.toLocaleString();
+  document.getElementById('danger-count').textContent=data.filter(d=>['매우위험','위험'].includes(d.위험등급)).length.toLocaleString();
+  document.getElementById('safe-count').textContent=data.filter(d=>['매우안전','안전'].includes(d.위험등급)).length.toLocaleString();
+}
+
+// 필터 변경시
+function filterBySE()     { if(sangkwonGeoData) renderSangkwonLayer(sangkwonGeoData); }
+function filterMarkers()  { renderMarkers(); }
+
+// 사이드 탭
+function switchSideTab(tab, btn) {
+  ['detail','bookmark','compare'].forEach(t=>{
+    document.getElementById('side-'+t).style.display = t===tab?'block':'none';
+  });
+  document.querySelectorAll('.side-tab').forEach(b=>{
+    b.style.color='var(--light)'; b.style.borderBottom='2px solid transparent';
+  });
+  btn.style.color='var(--text)'; btn.style.borderBottom='2px solid var(--accent)';
+}
+
+// 위치 상세정보
+function showLocationDetail(d) {
+  document.getElementById('side-detail').style.display='block';
+  document.getElementById('side-bookmark').style.display='none';
+  document.getElementById('side-compare').style.display='none';
+  document.querySelectorAll('.side-tab').forEach((b,i)=>{
+    b.style.color=i===0?'var(--text)':'var(--light)';
+    b.style.borderBottom=i===0?'2px solid var(--accent)':'2px solid transparent';
+  });
+
+  const addr=d.도로명주소||`${d.시군구명} ${d.행정동명}`;
+  document.getElementById('side-addr').innerHTML=
+    `<div style="font-size:13px;font-weight:700;">${addr}</div>
+     <div style="font-size:11px;color:var(--light);">${d.시군구명} ${d.행정동명}</div>`;
+
+  const pct=Math.round(d.위험확률*100);
+  const color=GRADE_COLOR[d.위험등급];
+  const bg=GRADE_BG[d.위험등급];
+  const isBookmarked=bookmarks.some(b=>b.위치ID===d.위치ID);
+  const isCompared=compareList.some(c=>c.위치ID===d.위치ID);
+  const pop=popupData[d.위치ID]||null;
+  const recKey=`${d.층구분}|${d.도로유형}|${d.TRDAR_SE_1}`;
+  const recList=recommendData[recKey]||[];
+
+  const tlHTML=pop&&pop.timeline&&pop.timeline.length>0
+    ?pop.timeline.map(t=>`<div class="tl-item"><div class="tl-period">${t.period}</div><div class="tl-dot ${t.업종!=='공실'?'active':''}"></div><div class="tl-업종 ${t.업종==='공실'?'tl-공실':''}">${t.업종}</div></div>`).join('')
+    :'<div style="font-size:12px;color:var(--light);">이력 데이터 없음</div>';
+
+  const recHTML=recList.length>0
+    ?recList.map(r=>`<div class="rec-item"><div class="rec-name">${r.업종소분류명}</div><div class="rec-survive">${r.평균생존}분기</div></div>`).join('')
+    :'<div style="font-size:12px;color:var(--light);">추천 데이터 없음</div>';
+
+  const dStr=JSON.stringify(d).replace(/"/g,"'");
+  document.getElementById('side-body').innerHTML=`
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <button onclick='toggleBookmark(${dStr})' style="flex:1;padding:7px;border:1px solid rgba(0,0,0,0.1);border-radius:20px;background:${isBookmarked?'#FFD700':'transparent'};font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);">
+        ⭐ ${isBookmarked?'즐겨찾기 해제':'즐겨찾기'}
+      </button>
+      <button onclick='toggleCompare(${dStr})' style="flex:1;padding:7px;border:1px solid rgba(0,0,0,0.1);border-radius:20px;background:${isCompared?'var(--lavender)':'transparent'};font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);">
+        📊 ${isCompared?'비교 해제':'비교 추가'}
+      </button>
+    </div>
+    <div class="risk-gauge">
+      <div class="risk-lbl">위험도</div>
+      <div class="risk-bar-wrap"><div class="risk-bar-fill" style="width:${pct}%;background:${color};"></div></div>
+      <div><span class="risk-pct" style="color:${color};">${pct}%</span>
+           <span class="risk-grade" style="background:${bg};color:${color};">${d.위험등급}</span></div>
+    </div>
+    <div class="info-grid">
+      <div class="info-cell"><div class="info-cell-lbl">층구분</div><div class="info-cell-val">${d.층구분}</div></div>
+      <div class="info-cell"><div class="info-cell-lbl">상권유형</div><div class="info-cell-val">${d.TRDAR_SE_1}</div></div>
+      <div class="info-cell"><div class="info-cell-lbl">주용도</div><div class="info-cell-val">${d.주용도코드명||'-'}</div></div>
+      <div class="info-cell"><div class="info-cell-lbl">연면적</div><div class="info-cell-val">${d.연면적?Math.round(d.연면적).toLocaleString()+'㎡':'-'}</div></div>
+      <div class="info-cell"><div class="info-cell-lbl">지하철거리</div><div class="info-cell-val">${d.지하철거리_m?Math.round(d.지하철거리_m)+'m':'-'}</div></div>
+      <div class="info-cell"><div class="info-cell-lbl">도로유형</div><div class="info-cell-val">${d.도로유형||'-'}</div></div>
+    </div>
+    <div class="tl-section"><div class="tl-title">10년 업종 이력</div>${tlHTML}</div>
+    <div class="tl-section">
+      <div class="tl-title">비슷한 조건에서 오래 간 업종</div>
+      <div style="font-size:10px;color:var(--light);margin-bottom:8px;">${d.층구분} · ${d.도로유형} · ${d.TRDAR_SE_1}</div>
+      ${recHTML}
+    </div>`;
+}
+
+// 즐겨찾기
+function toggleBookmark(d) {
+  const idx=bookmarks.findIndex(b=>b.위치ID===d.위치ID);
+  if(idx>=0) bookmarks.splice(idx,1); else bookmarks.push(d);
+  renderBookmarkList();
+  showLocationDetail(d);
+  renderMarkers();
+}
+function renderBookmarkList() {
+  const el=document.getElementById('bookmark-list');
+  if(!bookmarks.length){ el.innerHTML='<div class="empty-state" style="height:200px;"><div class="empty-icon">⭐</div><div class="empty-text">즐겨찾기한 위치가 없습니다</div></div>'; return; }
+  el.innerHTML=bookmarks.map(d=>`
+    <div style="background:var(--box);border-radius:12px;padding:10px 14px;margin-bottom:8px;box-shadow:var(--shadow);cursor:pointer;" onclick='showLocationDetail(${JSON.stringify(d).replace(/"/g,"'")})'>
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px;">${d.도로명주소||d.행정동명}</div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="font-size:11px;color:var(--light);">${d.층구분} · ${d.TRDAR_SE_1}</span>
+        <span style="font-size:11px;font-weight:700;color:${GRADE_COLOR[d.위험등급]};">${Math.round(d.위험확률*100)}% ${d.위험등급}</span>
+      </div>
+    </div>`).join('');
+}
+
+// 비교
+function toggleCompare(d) {
+  const idx=compareList.findIndex(c=>c.위치ID===d.위치ID);
+  if(idx>=0) compareList.splice(idx,1);
+  else if(compareList.length<2) compareList.push(d);
+  else { alert('비교는 최대 2개까지입니다. 기존 항목을 먼저 제거하세요.'); return; }
+  renderCompareList();
+  showLocationDetail(d);
+}
+function renderCompareList() {
+  const el=document.getElementById('compare-list');
+  if(!compareList.length){ el.innerHTML='<div class="empty-state" style="height:200px;"><div class="empty-icon">📊</div><div class="empty-text">비교할 위치를 추가하세요</div></div>'; return; }
+  const fields=[['층구분','층구분'],['TRDAR_SE_1','상권유형'],['주용도코드명','주용도'],['연면적','연면적'],['지하철거리_m','지하철거리'],['위험확률','위험확률']];
+  let h=`<div style="display:grid;grid-template-columns:repeat(${compareList.length},1fr);gap:8px;margin-bottom:12px;">`;
+  compareList.forEach(d=>{ h+=`<div style="background:var(--box);border-radius:12px;padding:10px;box-shadow:var(--shadow);text-align:center;"><div style="font-size:14px;font-weight:700;color:${GRADE_COLOR[d.위험등급]};">${Math.round(d.위험확률*100)}%</div><div style="font-size:10px;color:var(--light);">${d.도로명주소||d.행정동명}</div></div>`; });
+  h+='</div>';
+  if(compareList.length===2){
+    h+='<table style="width:100%;border-collapse:collapse;font-size:12px;"><tr><th style="padding:6px;text-align:left;font-size:10px;color:var(--light);border-bottom:1px solid rgba(0,0,0,0.08);">항목</th>';
+    compareList.forEach(d=>{ h+=`<th style="padding:6px;text-align:center;font-size:10px;color:var(--light);border-bottom:1px solid rgba(0,0,0,0.08);">${d.층구분}</th>`; });
+    h+='</tr>';
+    fields.forEach(([key,label])=>{
+      h+=`<tr><td style="padding:6px;color:var(--light);font-size:11px;border-bottom:1px solid rgba(0,0,0,0.05);">${label}</td>`;
+      compareList.forEach(d=>{
+        let v=d[key];
+        if(key==='위험확률') v=Math.round(v*100)+'%';
+        else if(key==='연면적') v=v?Math.round(v).toLocaleString()+'㎡':'-';
+        else if(key==='지하철거리_m') v=v?Math.round(v)+'m':'-';
+        h+=`<td style="padding:6px;text-align:center;font-weight:600;color:var(--text);border-bottom:1px solid rgba(0,0,0,0.05);">${v||'-'}</td>`;
+      });
+      h+='</tr>';
+    });
+    h+='</table>';
+  }
+  el.innerHTML=h;
+}
+</script>
+</body>
+</html>
