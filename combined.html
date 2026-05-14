@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -608,8 +609,13 @@ function initMap() {
   setTimeout(()=>mapInstance.invalidateSize(), 200);
 }
 
-function loadMapData() {
-  // 상권 폴리곤 — 독립 로드
+// Supabase 설정
+const SUPABASE_URL = 'https://wvvpkvtzldsmxdtllxym.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2dnBrdnR6bGRzbXhkdGxseHltIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODYzNzEzMCwiZXhwIjoyMDk0MjEzMTMwfQ.DX-pCWq2cBfUIgmGctvA6NHIOYeY6RMXpg82bosE7xU';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function loadMapData() {
+  // 상권 폴리곤 로드
   fetch('./sangkwon.geojson')
     .then(r=>r.json())
     .then(geoData=>{
@@ -618,13 +624,38 @@ function loadMapData() {
       document.getElementById('map-hint').textContent='상권을 클릭하면 위치가 표시됩니다';
     }).catch(e=>console.log('sangkwon.geojson 로드 실패:', e));
 
-  // 위치 데이터 — 독립 로드
-  fetch('./step5_map_data.json')
-    .then(r=>r.text())
-    .then(t=>{
-      allData=JSON.parse(t.replace(/:\s*NaN/g,': null'));
-
-    }).catch(()=>console.log('step5_map_data.json 없음 — 전처리 먼저 실행'));
+  // Supabase에서 위치 데이터 로드
+  console.log('Supabase 위치 데이터 로드 중...');
+  let allRows = [];
+  let from = 0;
+  const pageSize = 1000;
+  while(true) {
+    const { data, error } = await sb.from('locations').select('*').range(from, from+pageSize-1);
+    if(error) { console.log('Supabase 오류:', error); break; }
+    if(!data || data.length===0) break;
+    allRows = allRows.concat(data);
+    if(data.length < pageSize) break;
+    from += pageSize;
+  }
+  allData = allRows.map(d=>({
+    위치ID: d.loc_id,
+    위도: d.lat,
+    경도: d.lng,
+    위험확률: d.risk_score,
+    위험등급: d.risk_grade,
+    층구분: d.floor,
+    TRDAR_CD: d.trdar_cd,
+    TRDAR_SE_1: d.trdar_se,
+    도로유형: d.road_type,
+    시군구명: d.gu,
+    행정동명: d.dong,
+    도로명주소: d.address,
+    주용도코드명: d.usage,
+    연면적: d.area,
+    지하철거리_m: d.subway_dist,
+    건물내위치수: d.shop_count
+  }));
+  console.log('위치 데이터 로드 완료: ' + allData.length + '개');
 
   fetch('./step5_popup_data.json').then(r=>r.json()).then(d=>{popupData=d;}).catch(()=>{});
   fetch('./step5_recommend.json').then(r=>r.json()).then(d=>{recommendData=d;}).catch(()=>{});
