@@ -658,7 +658,6 @@ async function loadMapData() {
   console.log('위치 데이터 로드 완료: ' + allData.length + '개');
 
     // popup 데이터 Supabase에서 로드
-  loadPopupData();
   fetch('./step5_recommend.json').then(r=>r.json()).then(d=>{recommendData=d;}).catch(()=>{});
 }
 
@@ -743,7 +742,7 @@ function switchSideTab(tab, btn) {
 }
 
 // 위치 상세정보
-function showLocationDetail(d) {
+async function showLocationDetail(d) {
   document.getElementById('side-detail').style.display='block';
   document.getElementById('side-bookmark').style.display='none';
   document.getElementById('side-compare').style.display='none';
@@ -762,7 +761,12 @@ function showLocationDetail(d) {
   const bg=GRADE_BG[d.위험등급];
   const isBookmarked=bookmarks.some(b=>b.위치ID===d.위치ID);
   const isCompared=compareList.some(c=>c.위치ID===d.위치ID);
-  const pop=popupData[d.위치ID]||null;
+  // 클릭시 Supabase에서 해당 위치 이력만 조회
+  const pop = await (async () => {
+    const { data } = await sb.from('timeline').select('period,category').eq('loc_id', d.위치ID).order('period');
+    if(!data||data.length===0) return null;
+    return { timeline: data.map(r=>({ period: r.period, '업종': r.category })) };
+  })();
   const recKey=`${d.층구분}|${d.도로유형}|${d.TRDAR_SE_1}`;
   const recList=recommendData[recKey]||[];
 
@@ -863,22 +867,7 @@ function renderCompareList() {
   el.innerHTML=h;
 }
 
-async function loadPopupData() {
-  let rows = [], from = 0, ps = 1000;
-  while(true) {
-    const { data, error } = await sb.from('timeline').select('loc_id,period,category').range(from, from+ps-1);
-    if(error) { console.log('timeline 오류:', error); break; }
-    if(!data || data.length===0) break;
-    data.forEach(r => {
-      if(!popupData[r.loc_id]) popupData[r.loc_id] = { timeline: [] };
-      popupData[r.loc_id].timeline.push({ period: r.period, '업종': r.category });
-    });
-    rows = rows.concat(data);
-    if(data.length < ps) break;
-    from += ps;
-  }
-  console.log('팝업 데이터 로드 완료: ' + Object.keys(popupData).length + '개');
-}
+
 </script>
 </body>
 </html>
